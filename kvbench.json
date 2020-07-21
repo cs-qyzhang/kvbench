@@ -1,0 +1,12 @@
+{
+    "user": "张丘洋",
+    "pipe": "./kvbench.pipe",
+    "bench": [
+        {
+            "name": "std::map",
+            "preTask": "",
+            "task": "./build/std_map_bench",
+            "afterTask": ""
+        }
+    ]
+}
