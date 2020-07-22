@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 project(kvbench)
 
-add_executable(std_map_bench std_map_bench.cc)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+set(KVBENCH_LIB protobuf pthread)
+
+add_executable(std_map_bench db/std_map.cc)
+target_link_libraries(std_map_bench ${KVBENCH_LIB})

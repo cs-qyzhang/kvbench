@@ -1,12 +1,74 @@
 {
-    "user": "张丘洋",
-    "pipe": "./kvbench.pipe",
-    "bench": [
-        {
-            "name": "std::map",
-            "preTask": "",
-            "task": "./build/std_map_bench",
-            "afterTask": ""
-        }
-    ]
+  "name": "Test",
+  "user": "张丘洋",
+  "protoData": "./kvbench.proto.dat",
+  "texTemplate": "./report_template.tex",
+  "compileTeX": false,
+  "showFigure": false,
+  "uploadURL": "http://jianyue.tech/upload/upload.php",
+  "testThread": 1,
+  "phase": [
+    {
+      "type": "LOAD",
+      "size": 100000
+    },
+    {
+      "type": "GET",
+      "size": 100000
+    },
+    {
+      "type": "PUT",
+      "size": 100000
+    },
+    {
+      "type": "DELETE",
+      "size": 100000
+    }
+  ],
+  "bench": [
+    {
+      "name": "Level Hashing",
+      "class": "LevelHash",
+      "keyType": "uint64_t",
+      "valueType": "uint64_t",
+      "keyRandom": "RandomUniformUint64",
+      "valueRandom": "RandomUniformUint64",
+      "preTask": "",
+      "task": "/home/qyzhang/src/RECIPE/build/kvbench_level_hash",
+      "afterTask": ""
+    },
+    {
+      "name": "Combo Tree",
+      "class": "ComboTree",
+      "keyType": "uint64_t",
+      "valueType": "uint64_t",
+      "key_random": "RandomUniformUint64",
+      "value_random": "RandomUniformUint64",
+      "preTask": "",
+      "task": "/home/qyzhang/scaled_kv/build/kvbench_combo_tree",
+      "afterTask": ""
+    },
+    {
+      "name": "P_CLHT",
+      "class": "CLHT",
+      "keyType": "uint64_t",
+      "valueType": "uint64_t",
+      "key_random": "RandomUniformUint64",
+      "value_random": "RandomUniformUint64",
+      "preTask": "",
+      "task": "/home/qyzhang/src/RECIPE/build/kvbench_p_clht",
+      "afterTask": ""
+    },
+    {
+      "name": "std::map",
+      "class": "Map",
+      "keyType": "uint64_t",
+      "valueType": "uint64_t",
+      "key_random": "RandomUniformUint64",
+      "value_random": "RandomUniformUint64",
+      "preTask": "",
+      "task": "./build/std_map_bench",
+      "afterTask": ""
+    }
+  ]
 }

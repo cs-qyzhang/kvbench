@@ -6,12 +6,13 @@
 #include <iostream>
 #include <numeric>
 #include <algorithm>
+#include <fstream>
 
 #include "random.h"
+#include "kvbench.pb.h"
+#include "kvbench.pb.cc"
 
 namespace kvbench {
-
-const std::string DEFAULT_SERVER = "http://jianyue.tech";
 
 enum class Operation {
   LOAD,
@@ -20,6 +21,7 @@ enum class Operation {
   UPDATE,
   DELETE,
   SCAN,
+  ERROR,
 };
 
 std::ostream& operator<<(std::ostream& os, const Operation& op) {
@@ -37,22 +39,13 @@ std::ostream& operator<<(std::ostream& os, const Operation& op) {
     case Operation::SCAN:
       os << "SCAN"; break;
     default:
-      break;
+      os << "ERROR"; break;
   }
   return os;
 }
 
-
-struct Stat {
-  std::vector<double>* latency;
-  double average_latency;
-  double max_latency;
-  double duration;
-  double throughput;
-  size_t success;
-  size_t failed;
-  size_t total;
-};
+template <typename Key, typename Value>
+class Bench;
 
 namespace {  // anonymous namespace
 
@@ -84,7 +77,7 @@ class Timer {
   double End() {
     end_ = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end_ - start_;
-    return duration.count();
+    return duration.count() * 1000000;
   }
 
  private:
@@ -92,31 +85,26 @@ class Timer {
   std::chrono::time_point<std::chrono::high_resolution_clock> end_;
 };
 
-}  // anonymous namespace
-
-template <typename Key, typename Value>
-class Bench;
-
 template <typename Key, typename Value>
 class Options {
  public:
   Options(int default_test_threads = 1, bool default_record_latency = true)
-      : default_test_threads_(default_test_threads),
-        default_record_latency_(default_record_latency) {}
+      : test_threads_(default_test_threads),
+        record_latency_(default_record_latency) {}
 
   void Append(Operation op, size_t size) {
     phases_.emplace_back(op, size,
                          new RandomDefault<Key>(),
                          new RandomDefault<Value>(),
-                         default_test_threads_,
-                         default_record_latency_);
+                         test_threads_,
+                         record_latency_);
   }
 
   void Append(Operation op, size_t size, int test_threads) {
     phases_.emplace_back(op, size,
                          new RandomDefault<Key>(),
                          new RandomDefault<Value>(),
-                         test_threads, default_record_latency_);
+                         test_threads, record_latency_);
   }
 
   void Append(Operation op, size_t size, int test_threads,
@@ -135,13 +123,19 @@ class Options {
                          test_threads, record_latency);
   }
 
+  void SetThreadNum(unsigned int nr_thread) {
+    test_threads_ = nr_thread;
+  }
+
  private:
   std::vector<TestPhase<Key, Value>> phases_;
-  bool default_record_latency_ = true;
-  int default_test_threads_ = 1;
+  bool record_latency_ = true;
+  int test_threads_ = 1;
 
   friend class Bench<Key, Value>;
 };
+
+}  // anonymous namespace
 
 template <typename Key, typename Value>
 class DB {
@@ -168,116 +162,201 @@ class DB {
 template <typename Key, typename Value>
 class Bench {
  public:
-  Bench(DB<Key, Value>* db, Options<Key, Value>* option)
-      : db_(db), options_(option) {}
+  Bench(DB<Key, Value>* db) : db_(db), options_(new Options<Key, Value>()) {
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
+  }
 
   ~Bench() {
     delete db_;
+    google::protobuf::ShutdownProtobufLibrary();
   }
 
-  void Run() {
-    Stat* stat = new Stat();
-    stats_.push_back(stat);
-    Timer run;
-    run.Start();
-    for (auto& phase : options_->phases_)
-      RunPhase_(phase);
-    stat->duration = run.End();
-    CaculateStatistic_();
+  void Run(int argc, char** argv) {
+    ParseArguments_(argc, argv);
+    Run_();
   }
 
   void PrintStats() const {
+    if (stats_.stat_size() < 2)
+      return;
     std::cout << std::endl
       << "============================== STATICS ==============================" << std::endl
       << "DB name:        " << db_->Name() << std::endl
-      << "Total run time: " << stats_[0]->duration << std::endl;
+      << "Total run time: " << stats_.stat(0).duration() << std::endl;
 
     for (int i = 0; i < options_->phases_.size(); ++i) {
+      auto stat = stats_.stat(i + 1);
       std::cout << std::endl
         << "-------------------- PHASE " << i + 1 << ": " << options_->phases_[i].op << "--------------------" << std::endl
-        << "  " << "Run time:        " << stats_[i + 1]->duration << std::endl
-        << "  " << "Average latency: " << stats_[i + 1]->average_latency << std::endl
-        << "  " << "Maximum latency: " << stats_[i + 1]->max_latency << std::endl
-        << "  " << "Throughput:      " << stats_[i + 1]->throughput << std::endl;
+        << "  " << "Run time:        " << stat.duration() << std::endl
+        << "  " << "Total:           " << stat.total() << std::endl
+        << "  " << "Average latency: " << stat.average_latency() << std::endl
+        << "  " << "Maximum latency: " << stat.max_latency() << std::endl
+        << "  " << "Throughput:      " << stat.throughput() << std::endl;
     }
 
     std::cout << "============================ END STATICS ============================" << std::endl;
   }
 
-  void GeneratePDF(std::string URL = DEFAULT_SERVER) {}
-
-  void GenerateHTML(std::string URL = DEFAULT_SERVER) {}
+  bool DumpStatistics(std::string file_path = "kvbench.proto.dat") {
+    std::fstream output(file_path, std::ios::out | std::ios::trunc | std::ios::binary);
+    if (!stats_.SerializeToOstream(&output)) {
+      std::cerr << "Failed to write " << file_path << "!" << std::endl;
+      return false;
+    }
+    return true;
+  }
 
   Options<Key, Value>* GetOptions() const { return options_; }
 
-  Stat* GetStats(int phase) const {
-    if (phase >= stats_.size())
-      return nullptr;
-    return stats_[phase];
+  const Stat& GetStats(int phase) const {
+    if (phase >= stats_.stat_size()) {
+      std::cerr << "GetStats: invalid index!" << std::endl;
+      exit(-1);
+    }
+    return stats_.stat(phase);
   }
 
  private:
   DB<Key, Value>* db_;
   Options<Key, Value>* options_;
-  std::vector<Stat*> stats_;
+  Stats stats_;
+  std::vector<double> total_latency_;
+  std::vector<double> max_latency_;
 
-  void CaculateStatistic_() {
-    for (int i = 1; i < stats_.size(); ++i) {
-      auto& latency = stats_[i]->latency;
-      stats_[i]->average_latency =
-        std::accumulate(latency->begin(), latency->end(), 0.0) / stats_[i]->total;
-      stats_[i]->max_latency = *std::max_element(latency->begin(), latency->end());
-      stats_[i]->throughput = stats_[i]->total / stats_[i]->duration;
+  static Operation ToOperation_(char* str) {
+    if (strcmp(str, "LOAD") == 0) return Operation::LOAD;
+    if (strcmp(str, "PUT") == 0) return Operation::PUT;
+    if (strcmp(str, "GET") == 0) return Operation::GET;
+    if (strcmp(str, "UPDATE") == 0) return Operation::UPDATE;
+    if (strcmp(str, "DELETE") == 0) return Operation::DELETE;
+    if (strcmp(str, "SCAN") == 0) return Operation::SCAN;
+    return Operation::ERROR;
+  }
+
+  void ParseArguments_(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+      Operation op;
+      if ((op = ToOperation_(argv[i])) != Operation::ERROR) {
+        assert(i + 1 < argc);
+        size_t size = std::stoi(argv[i + 1]);
+        options_->Append(op, size);
+        i++;
+      } else if (strcmp(argv[i], "-thread") == 0) {
+        assert(i + 1 < argc);
+        size_t nr_thread = std::stoi(argv[i + 1]);
+        options_->SetThreadNum(nr_thread);
+        i++;
+      } else if (strcmp(argv[i], "are-you-kvbench") == 0) {
+        std::cout << "YES!" << std::endl;
+        exit(0);
+      }
     }
   }
 
+  void CaculateStatistic_() {
+    if (stats_.stat_size() < 2)
+      return;
+    size_t total_op = 0;
+    double latency_sum = 0.0;
+    for (int i = 1; i < stats_.stat_size(); ++i) {
+      auto stat = stats_.mutable_stat(i);
+      auto latency = stat->mutable_latency();
+      stat->set_average_latency(total_latency_[i - 1] / stat->total());
+      stat->set_max_latency(max_latency_[i - 1]);
+      stat->set_throughput(stat->total() / stat->duration() * 1000000);
+      total_op += stat->total();
+      latency_sum += stat->average_latency();
+    }
+    auto stat = stats_.mutable_stat(0);
+    stat->set_throughput(total_op / stat->duration() * 1000000);
+    stat->set_max_latency(*std::max_element(max_latency_.cbegin(), max_latency_.cend()));
+    stat->set_average_latency(latency_sum / (stats_.stat_size() - 1));
+  }
+
+  void Run_() {
+    Stat* stat = stats_.add_stat();
+    Timer run;
+    run.Start();
+    for (auto& phase : options_->phases_)
+      RunPhase_(phase);
+    stat->set_duration(run.End());
+    CaculateStatistic_();
+    PrintStats();
+    DumpStatistics();
+  }
+
   void RunPhase_(TestPhase<Key, Value>& phase) {
-    Stat* stat = new Stat();
-    stat->latency = new std::vector<double>();
-    stat->total = phase.size;
+    Stat* stat = stats_.add_stat();
+    stat->set_total(phase.size);
     Timer run_time;
     Timer latency_timer;
+    int sample_interval = phase.size < 2000000 ? 1 : phase.size / 2000000;
+    double latency;
+    double total_latency = 0.0;
+    double max_latency = 0.0;
 
     run_time.Start();
     if (phase.op == Operation::LOAD || phase.op == Operation::PUT) {
       for (int i = 0; i < phase.size; ++i) {
         latency_timer.Start();
         db_->Put(phase.random_key->Next(), phase.random_value->Next());
-        stat->latency->push_back(latency_timer.End());
+        latency = latency_timer.End();
+        total_latency += latency;
+        max_latency = std::max(max_latency, latency);
+        if (i % sample_interval == 0)
+          stat->add_latency(latency_timer.End());
       }
     } else if (phase.op == Operation::GET) {
       for (int i = 0; i < phase.size; ++i) {
         latency_timer.Start();
         Value value;
         db_->Get(phase.random_key->Next(), &value);
-        stat->latency->push_back(latency_timer.End());
+        latency = latency_timer.End();
+        total_latency += latency;
+        max_latency = std::max(max_latency, latency);
+        if (i % sample_interval == 0)
+          stat->add_latency(latency_timer.End());
       }
     } else if (phase.op == Operation::UPDATE) {
       for (int i = 0; i < phase.size; ++i) {
         latency_timer.Start();
         db_->Update(phase.random_key->Next(), phase.random_value->Next());
-        stat->latency->push_back(latency_timer.End());
+        latency = latency_timer.End();
+        total_latency += latency;
+        max_latency = std::max(max_latency, latency);
+        if (i % sample_interval == 0)
+          stat->add_latency(latency_timer.End());
       }
     } else if (phase.op == Operation::DELETE) {
       for (int i = 0; i < phase.size; ++i) {
         latency_timer.Start();
         db_->Delete(phase.random_key->Next());
-        stat->latency->push_back(latency_timer.End());
+        latency = latency_timer.End();
+        total_latency += latency;
+        max_latency = std::max(max_latency, latency);
+        if (i % sample_interval == 0)
+          stat->add_latency(latency_timer.End());
       }
     } else if (phase.op == Operation::SCAN) {
       for (int i = 0; i < phase.size; ++i) {
         latency_timer.Start();
         Key min_key = phase.random_key->Next();
+        Key max_key = phase.random_key->Next();
         std::vector<Value> values;
-        db_->Scan(min_key, min_key + 1000, &values);  // TODO
-        stat->latency->push_back(latency_timer.End());
+        db_->Scan(min_key, max_key, &values);  // TODO
+        latency = latency_timer.End();
+        total_latency += latency;
+        max_latency = std::max(max_latency, latency);
+        if (i % sample_interval == 0)
+          stat->add_latency(latency_timer.End());
       }
     } else {
       assert(0);
     }
-    stat->duration = run_time.End();
-
-    stats_.push_back(stat);
+    stat->set_duration(run_time.End());
+    total_latency_.push_back(total_latency);
+    max_latency_.push_back(max_latency);
   }
 };
 

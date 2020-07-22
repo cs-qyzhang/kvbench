@@ -1,0 +1,248 @@
+% !TEX program = xelatex
+\documentclass{ctexart}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{stackengine}
+\usepackage{booktabs}
+\usepackage{pdflscape}
+\usepackage[hidelinks]{hyperref}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+
+\hypersetup{pdfauthor={\VAR{user}},%
+            pdftitle={\VAR{title} 测试报告},%
+            pdfsubject={测试报告},%
+            pdfkeywords={\VAR{title}},%
+}
+
+\setlist{noitemsep}
+\setlist{nosep,labelindent=\parindent,leftmargin=0pt,itemindent=*,listparindent=\parindent}
+\setlist[enumerate,1]{label=\arabic*),font=\textup}
+\setlist[enumerate,2]{label=\alph*.,font=\textup,labelindent=2\parindent,leftmargin=\parindent,itemindent=*}
+
+% https://tex.stackexchange.com/a/453038
+\fancypagestyle{mylandscape}{
+  \fancyhf{} %Clears the header/footer
+  \fancyfoot{% Footer
+  \makebox[\textwidth][r]{% Right
+    \rlap{\hspace{.75cm}% Push out of margin by \footskip
+      \smash{% Remove vertical height
+        \raisebox{4.87in}{% Raise vertically
+          \rotatebox{90}{\thepage}}}}}}% Rotate counter-clockwise
+  \renewcommand{\headrulewidth}{0pt}% No header rule
+  \renewcommand{\footrulewidth}{0pt}% No footer rule
+}
+
+\catcode`_=12
+
+\setmainfont{TeX Gyre Termes}
+
+\definecolor{maxcolor}{rgb}{0.24, 0.71, 0.54}
+\definecolor{mincolor}{rgb}{0.89, 0.26, 0.2}
+
+\pagestyle{plain}
+
+\author{\VAR{user}}
+\date{\VAR{now}}
+\title{\VAR{title} 测试报告\footnote{由 kvbench 生成：\url{https://github.com/cs-qyzhang/kvbench}}}
+
+\begin{document}
+
+\newgeometry{left=3cm,right=3cm,top=3cm,bottom=3cm}
+
+\maketitle
+
+\section{测试环境}
+
+\begin{description}
+\item[Machine Name:] \VAR{environ.machine_type}
+\item[CPU Model:] \VAR{environ.cpu_model}
+\item[RAM:] \VAR{environ.ram_size}
+\item[Disk Model:] \VAR{environ.disk_model}
+\item[OS:] \VAR{environ.os_type}
+\item[Kernel:] \VAR{environ.kernel}
+\end{description}
+
+\section{测试配置}
+
+\subsection{运行阶段}
+
+\begin{enumerate}
+%- for phase in phases
+  \item \textbf{\VAR{phase.type}} \VAR{phase.size}
+%- endfor
+\end{enumerate}
+
+\subsection{测试程序概览}
+
+\begin{itemize}
+%- for bench in benchs
+  \item \textbf{\VAR{bench.name}}
+%- endfor
+\end{itemize}
+
+\subsection{测试程序配置}
+
+\begin{itemize}
+%- for bench in benchs
+  \item \textcolor{red}{\textbf{\VAR{bench.name}}}
+  \begin{description}[itemindent=4em]
+    \item[class:] \VAR{bench.class}
+    \item[Key Type:] \VAR{bench.keyType}
+    \item[Value Type:] \VAR{bench.valueType}
+    %- if bench.keyRandom
+    \item[Key Random:] class \VAR{bench.keyRandom}
+    %- endif
+    %- if bench.valueRandom
+    \item[Value Random:] class \VAR{bench.valueRandom}
+    %- endif
+    %- if bench.preTask
+    \item[Pre Task:] \texttt{\VAR{bench.preTask}}
+    %- endif
+    \item[Task:] \texttt{\VAR{bench.task}}
+    %- if bench.afterTask
+    \item[After Task:] \texttt{\VAR{bench.afterTask}}
+    %- endif
+  \end{description}
+%- endfor
+\end{itemize}
+
+\clearpage
+\restoregeometry
+
+\section{测试结果概览}
+
+\vfill
+\begin{table}[htp]
+\centering
+\begin{tabular}{ccrrr}
+  \toprule
+  \textbf{DB} & \textbf{Phase} & \textbf{Throughput (ops/s)} & \textbf{Average Latency (us)} & \textbf{Maximum Latency (us)}\\
+  \midrule
+
+\BLOCK{for i in range(stats|length)}
+  \multirow{\VAR{stats[i].phases|length}}{*}{\textbf{\VAR{stats[i].db}}}
+  \BLOCK{for j in range(stats[i].phases|length)}
+    & \textbf{\VAR{stats[i].phases[j].name}} & \VAR{stats[i].phases[j].throughput} & \VAR{stats[i].phases[j].latency} & \VAR{stats[i].phases[j].max_latency} \\
+    \BLOCK{if j != stats[i].phases|length - 1}
+      \cline{2-5}
+    \BLOCK{else}
+      \BLOCK{if i != stats|length - 1}
+        \midrule
+      \BLOCK{endif}
+    \BLOCK{endif}
+  \BLOCK{endfor}
+\BLOCK{endfor}
+  \bottomrule
+\end{tabular}
+\caption{测试结果表（竖）}
+\end{table}
+\vfill
+
+\clearpage
+
+\begin{landscape}
+
+\begin{table}
+% \extrarowheight=\aboverulesep
+% \addtolength{\extrarowheight}{\belowrulesep}
+% \aboverulesep=0pt
+% \belowrulesep=0pt
+\setlength{\tabcolsep}{12pt}
+\setlength\doublerulesep{1.5pt}
+\centering
+\begin{tabular}{cc\BLOCK{for i in range(stats|length)}r\BLOCK{endfor}}
+  \toprule
+  \addstackgap[8pt]{\textbf{Phase}} & \textbf{Evaluation}\BLOCK{for stat in stats} & \textcolor{red}{\textbf{\VAR{stat.db}}}\BLOCK{endfor} \\
+  \midrule
+
+%- for i in range(stats[0].phases|length)
+  \multirow{2}{*}{\textbf{\VAR{stats[0].phases[i].name}}}
+  & \textbf{Throughput (ops/s)}
+  %- for j in range(stats|length)
+    %- if stats[j].phases[i].throughput == phase_max_min[i].max_throughput
+      & \cellcolor{maxcolor}\VAR{stats[j].phases[i].throughput}
+    %- elif stats[j].phases[i].throughput == phase_max_min[i].min_throughput
+      & \cellcolor{mincolor}\VAR{stats[j].phases[i].throughput}
+    %- else
+      & \VAR{stats[j].phases[i].throughput}
+    %- endif
+  %- endfor
+    \\\hhline{~\BLOCK{for j in range(stats|length+1)}-\BLOCK{endfor}}
+
+  & \textbf{Average Latency (us)}
+  %- for j in range(stats|length)
+    %- if stats[j].phases[i].latency == phase_max_min[i].max_latency
+      & \cellcolor{mincolor}\VAR{stats[j].phases[i].latency}
+    %- elif stats[j].phases[i].latency == phase_max_min[i].min_latency
+      & \cellcolor{maxcolor}\VAR{stats[j].phases[i].latency}
+    %- else
+      & \VAR{stats[j].phases[i].latency}
+    %- endif
+  %- endfor
+    \\\hhline{~\BLOCK{for j in range(stats|length+1)}-\BLOCK{endfor}}
+
+  & \textbf{Maximum Latency (us)}
+  %- for j in range(stats|length)
+    %- if stats[j].phases[i].max_latency == phase_max_min[i].max_max_latency
+      & \cellcolor{mincolor}\VAR{stats[j].phases[i].max_latency}
+    %- elif stats[j].phases[i].max_latency == phase_max_min[i].min_max_latency
+      & \cellcolor{maxcolor}\VAR{stats[j].phases[i].max_latency}
+    %- else
+      & \VAR{stats[j].phases[i].max_latency}
+    %- endif
+  %- endfor
+  %- if i != stats[0].phases|length - 1
+    \\\midrule
+  %- else
+    \\\bottomrule
+  %- endif
+
+%- endfor
+\end{tabular}
+\caption{测试结果表（横）}
+\end{table}
+
+\thispagestyle{mylandscape}
+\end{landscape}
+
+\section{吞吐量}
+
+\vfill
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics{throughput.pdf}
+  \caption{吞吐量柱状图}
+\end{figure}
+\vfill
+
+\clearpage
+
+\section{延迟}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.7\textwidth]{latency-average.pdf}
+  \caption{平均延迟柱状图}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.7\textwidth]{latency-max.pdf}
+  \caption{最大延迟柱状图}
+\end{figure}
+
+%- for i in range(1, stats[0].phases|length)
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{latency-phase-\VAR{i}.pdf}
+  \caption{第 \VAR{i} 阶段 -- \VAR{stats[0].phases[i].name} 延迟折线图}
+\end{figure}
+%- endfor
+
+\end{document}

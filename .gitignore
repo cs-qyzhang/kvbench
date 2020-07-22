@@ -3,3 +3,45 @@ kvbench.pipe
 
 ## CMake
 build/
+
+## VSCode
+.vscode/
+
+## Proto Data
+*.proto.dat
+
+## Testing Archive
+*.tar.gz
+
+## Python
+__pycache__/
+
+## TeX
+*.tex
+!report_template.tex
+*.pgf
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+*.dvi
+*.xdv
+*.pdf
+*-converted-to.*
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+latex.out/
+_minted*
+*.pyg

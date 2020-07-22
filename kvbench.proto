@@ -3,11 +3,15 @@ syntax = "proto3";
 package kvbench;
 
 message Stat {
-  double duration;
-  double average_latency;
-  double max_latency;
-  double throughput;
-  repeated double latency;
-  int32 failed;
-  int32 total;
+  double duration         = 1;
+  double average_latency  = 2;
+  double max_latency      = 3;
+  double throughput       = 4;
+  repeated double latency = 5;
+  int32 failed            = 6;
+  int32 total             = 7;
+}
+
+message Stats {
+  repeated Stat stat      = 1;
 }

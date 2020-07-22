@@ -1,6 +1,6 @@
 #include <iostream>
 #include <map>
-#include "kvbench.h"
+#include "kvbench/kvbench.h"
 
 using namespace kvbench;
 
@@ -26,6 +26,7 @@ class Map : public kvbench::DB<Key, Value> {
   }
 
   int Delete(Key key) {
+    map_.erase(key);
     return 0;
   }
 
@@ -48,21 +49,9 @@ class Map : public kvbench::DB<Key, Value> {
 };
 
 int main(int argc, char** argv) {
-  Options<int, int>* options = new Options<int, int>(2, true);
-  options->Append(Operation::LOAD, 1000000);
-  options->Append(Operation::PUT, 1000000);
-  options->Append(Operation::GET, 1000000);
-  options->Append(Operation::DELETE, 1000000);
-
-  DB<int, int>* db = new Map<int, int>();
-
-  Bench<int, int>* bench = new Bench<int, int>(db, options);
-  bench->Run();
-  bench->PrintStats();
-  bench->GeneratePDF();
-  bench->GenerateHTML();
-
+  DB<uint64_t, uint64_t>* db = new Map<uint64_t, uint64_t>();
+  Bench<uint64_t, uint64_t>* bench = new Bench<uint64_t, uint64_t>(db);
+  bench->Run(argc, argv);
   delete bench;
-
   return 0;
 }
