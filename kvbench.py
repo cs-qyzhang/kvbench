@@ -54,7 +54,8 @@ def draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name):
     ax.yaxis.grid(True, color='#EEEEEE')
     ax.xaxis.grid(False)
     fig.tight_layout()
-    plt.savefig(fig_name + ".pgf")
+    if settings["generatePGF"]:
+        plt.savefig(fig_name + ".pgf")
     plt.savefig(fig_name + ".pdf")
     if settings["showFigure"]:
         plt.show()
@@ -78,7 +79,8 @@ def draw_bar_chart(data, bench_names, labels, ylabel, title, fig_name):
     ax.yaxis.grid(True, color='#EEEEEE')
     ax.xaxis.grid(False)
     fig.tight_layout()
-    plt.savefig(fig_name + ".pgf")
+    if settings["generatePGF"]:
+        plt.savefig(fig_name + ".pgf")
     plt.savefig(fig_name + ".pdf")
     if settings["showFigure"]:
         plt.show()

@@ -5,6 +5,7 @@
   "texTemplate": "./report_template.tex",
   "compileTeX": false,
   "showFigure": false,
+  "generatePGF": false,
   "uploadURL": "http://jianyue.tech/upload/upload.php",
   "testThread": 1,
   "phase": [
