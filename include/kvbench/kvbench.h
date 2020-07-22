@@ -162,7 +162,8 @@ class DB {
 template <typename Key, typename Value>
 class Bench {
  public:
-  Bench(DB<Key, Value>* db) : db_(db), options_(new Options<Key, Value>()) {
+  Bench(int argc, char** argv) : options_(new Options<Key, Value>()) {
+    ParseArguments_(argc, argv);
     GOOGLE_PROTOBUF_VERIFY_VERSION;
   }
 
@@ -171,8 +172,9 @@ class Bench {
     google::protobuf::ShutdownProtobufLibrary();
   }
 
-  void Run(int argc, char** argv) {
-    ParseArguments_(argc, argv);
+  void SetDB(DB<Key, Value>* db) { db_ = db; }
+
+  void Run() {
     Run_();
   }
 

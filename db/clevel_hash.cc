@@ -1,5 +1,5 @@
 #include <iostream>
-#include "/home/qyzhang/Projects/kvbench/include/kvbench/kvbench.h"
+#include "kvbench/kvbench.h"
 
 #include "../../examples/libpmemobj_cpp_examples_common.hpp"
 #include "../polymorphic_string.h"
@@ -90,9 +90,10 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
 };
 
 int main(int argc, char** argv) {
+  kvbench::Bench<uint64_t, uint64_t>* bench = new kvbench::Bench<uint64_t, uint64_t>(argc, argv);
   kvbench::DB<uint64_t, uint64_t>* db = new ClevelHash<uint64_t, uint64_t>();
-  kvbench::Bench<uint64_t, uint64_t>* bench = new kvbench::Bench<uint64_t, uint64_t>(db);
-  bench->Run(argc, argv);
+  bench->SetDB(db);
+  bench->Run();
   delete bench;
   return 0;
 }

@@ -51,9 +51,10 @@ class FastFair<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
 };
 
 int main(int argc, char** argv) {
+  kvbench::Bench<uint64_t, uint64_t>* bench = new kvbench::Bench<uint64_t, uint64_t>(argc, argv);
   kvbench::DB<uint64_t, uint64_t>* db = new FastFair<uint64_t, uint64_t>();
-  kvbench::Bench<uint64_t, uint64_t>* bench = new kvbench::Bench<uint64_t, uint64_t>(db);
-  bench->Run(argc, argv);
+  bench->SetDB(db);
+  bench->Run();
   delete bench;
   return 0;
 }

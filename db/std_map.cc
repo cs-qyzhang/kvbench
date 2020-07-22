@@ -49,9 +49,10 @@ class Map : public kvbench::DB<Key, Value> {
 };
 
 int main(int argc, char** argv) {
+  Bench<uint64_t, uint64_t>* bench = new Bench<uint64_t, uint64_t>(argc, argv);
   DB<uint64_t, uint64_t>* db = new Map<uint64_t, uint64_t>();
-  Bench<uint64_t, uint64_t>* bench = new Bench<uint64_t, uint64_t>(db);
-  bench->Run(argc, argv);
+  bench->SetDB(db);
+  bench->Run();
   delete bench;
   return 0;
 }
