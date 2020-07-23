@@ -120,17 +120,17 @@
 \vfill
 \begin{table}[htp]
 \centering
-\begin{tabular}{ccrrr}
+\begin{tabular}{ccrrrr}
   \toprule
-  \textbf{DB} & \textbf{Phase} & \textbf{Throughput (ops/s)} & \textbf{Average Latency (us)} & \textbf{Maximum Latency (us)}\\
+  \textbf{DB} & \textbf{Phase} & \textbf{Throughput (ops/s)} & \textbf{Average Latency (us)} & \textbf{Maximum Latency (us)} & \textbf{Duration (s)}\\
   \midrule
 
 \BLOCK{for i in range(stats|length)}
   \multirow{\VAR{stats[i].phases|length}}{*}{\textbf{\VAR{stats[i].db}}}
   \BLOCK{for j in range(stats[i].phases|length)}
-    & \textbf{\VAR{stats[i].phases[j].name}} & \VAR{stats[i].phases[j].throughput} & \VAR{stats[i].phases[j].latency} & \VAR{stats[i].phases[j].max_latency} \\
+    & \textbf{\VAR{stats[i].phases[j].name}} & \VAR{stats[i].phases[j].throughput} & \VAR{stats[i].phases[j].latency} & \VAR{stats[i].phases[j].max_latency} & \VAR{stats[i].phases[j].duration} \\
     \BLOCK{if j != stats[i].phases|length - 1}
-      \cline{2-5}
+      \cline{2-6}
     \BLOCK{else}
       \BLOCK{if i != stats|length - 1}
         \midrule

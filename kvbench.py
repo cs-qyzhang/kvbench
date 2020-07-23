@@ -37,6 +37,10 @@ def human_readable(num):
     return "{:,}".format(int(num))
 
 
+def get_duration(num: float):
+    return "{:0.2f}".format(num / 1000000.0)
+
+
 def get_us(num: float):
     return "{:0.4f}".format(num)
 
@@ -241,6 +245,7 @@ for bench in settings["bench"]:
         else:
             phase["name"] = settings["phase"][i - 1]["type"]
         phase["throughput"] = human_readable(stat.throughput)
+        phase["duration"] = get_duration(stat.duration)
         phase["latency"] = get_us(stat.average_latency)
         phase["max_latency"] = get_us(stat.max_latency)
         tex_stat["phases"].append(phase)
