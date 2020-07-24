@@ -7,7 +7,7 @@
   "showFigure": false,
   "generatePGF": false,
   "uploadURL": "http://jianyue.tech/upload/upload.php",
-  "testThread": 1,
+  "threadNumber": 1,
   "phase": [
     {
       "type": "LOAD",
@@ -29,7 +29,6 @@
   "bench": [
     {
       "name": "Level Hashing",
-      "class": "LevelHash",
       "keyType": "uint64_t",
       "valueType": "uint64_t",
       "keyRandom": "RandomUniformUint64",
@@ -40,7 +39,6 @@
     },
     {
       "name": "Combo Tree",
-      "class": "ComboTree",
       "keyType": "uint64_t",
       "valueType": "uint64_t",
       "key_random": "RandomUniformUint64",
@@ -51,7 +49,6 @@
     },
     {
       "name": "P_CLHT",
-      "class": "CLHT",
       "keyType": "uint64_t",
       "valueType": "uint64_t",
       "key_random": "RandomUniformUint64",
@@ -62,7 +59,6 @@
     },
     {
       "name": "std::map",
-      "class": "Map",
       "keyType": "uint64_t",
       "valueType": "uint64_t",
       "key_random": "RandomUniformUint64",

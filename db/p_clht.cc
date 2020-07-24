@@ -41,12 +41,6 @@ class CLHT<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
     return "Level Hashing";
   }
 
-  int GetThreadNumber() const {
-    return 1;
-  }
-
-  void SetThreadNumber(int thread_num) {}
-
  private:
   clht_t* db_;
 };

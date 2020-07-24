@@ -29,14 +29,21 @@ class ComboTree<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
   }
 
   int Get(uint64_t key, uint64_t* value) {
-  }
-
-  int Put(uint64_t key, uint64_t value) {
     char keybuf[NVM_KeySize + 1];
     char *pvalue = nullptr;
     fillchar8wirhint64(keybuf, key);
     std::string key_str(keybuf, NVM_KeySize);
     db_->Get(key_str, pvalue);
+    return 0;
+  }
+
+  int Put(uint64_t key, uint64_t value) {
+    char keybuf[NVM_KeySize + 1];
+    fillchar8wirhint64(keybuf, key);
+    std::string key_str(keybuf, NVM_KeySize);
+    char *pvalue = (char*)(key << 9);
+    db_->Insert(key_str, pvalue);
+    return 0;
   }
 
   int Update(uint64_t key,  uint64_t value) {
@@ -58,12 +65,6 @@ class ComboTree<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
   std::string Name() const {
     return "Combo Tree";
   }
-
-  int GetThreadNumber() const {
-    return 1;
-  }
-
-  void SetThreadNumber(int thread_num) {}
 
  private:
   NVMScaledKV* db_;

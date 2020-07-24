@@ -38,12 +38,6 @@ class Map : public kvbench::DB<Key, Value> {
     return "std::map";
   }
 
-  int GetThreadNumber() const {
-    return 1;
-  }
-
-  void SetThreadNumber(int thread_num) {}
-
  private:
   std::map<Key, Value> map_;
 };

@@ -42,7 +42,7 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
       nvobj::transaction::manual tx(pop);
 
       proot->cons = nvobj::make_persistent<persistent_map_type>();
-      proot->cons->set_thread_num(2);
+      proot->cons->set_thread_num(GetThreadNumber());
 
       nvobj::transaction::commit();
     }
@@ -78,12 +78,6 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
   std::string Name() const {
     return "Clevel Hashing";
   }
-
-  int GetThreadNumber() const {
-    return 1;
-  }
-
-  void SetThreadNumber(int thread_num) {}
 
  private:
   pmem::obj::persistent_ptr<persistent_map_type> db_;

@@ -13,13 +13,20 @@
 \usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 \usepackage{fancyhdr}
 \usepackage{enumitem}
+\usepackage{makecell}
 
+% hyperref
 \hypersetup{pdfauthor={\VAR{user}},%
-            pdftitle={\VAR{title} 测试报告},%
-            pdfsubject={测试报告},%
-            pdfkeywords={\VAR{title}},%
+            pdftitle={\VAR{title}},%
+            pdfsubject={https://github.com/cs-qyzhang/kvbench},%
+            pdfkeywords={\VAR{title},kvbench},%
 }
 
+% makecell
+\renewcommand\theadalign{cc}
+\renewcommand\theadfont{\bfseries}
+
+% enumitem
 \setlist{noitemsep}
 \setlist{nosep,labelindent=\parindent,leftmargin=0pt,itemindent=*,listparindent=\parindent}
 \setlist[enumerate,1]{label=\arabic*),font=\textup}
@@ -92,7 +99,10 @@
 %- for bench in benchs
   \item \textcolor{red}{\textbf{\VAR{bench.name}}}
   \begin{description}[itemindent=4em]
+    %- if bench.class
     \item[class:] \VAR{bench.class}
+    %- endif
+    \item[Thread Number:] \VAR{bench.threadNumber}
     \item[Key Type:] \VAR{bench.keyType}
     \item[Value Type:] \VAR{bench.valueType}
     %- if bench.keyRandom
@@ -122,7 +132,7 @@
 \centering
 \begin{tabular}{ccrrrr}
   \toprule
-  \textbf{DB} & \textbf{Phase} & \textbf{Throughput (ops/s)} & \textbf{Average Latency (us)} & \textbf{Maximum Latency (us)} & \textbf{Duration (s)}\\
+  \thead{DB} & \thead{Phase} & \thead{Throughput \\ (ops/s)} & \thead{Average Latency \\ (us)} & \thead{Maximum Latency \\ (us)} & \thead{Duration\\(s)}\\
   \midrule
 
 \BLOCK{for i in range(stats|length)}

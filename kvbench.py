@@ -11,6 +11,7 @@ import platform
 import jinja2
 import json
 import os
+import sys
 import tarfile
 import requests
 import subprocess
@@ -45,7 +46,7 @@ def get_us(num: float):
     return "{:0.4f}".format(num)
 
 
-def draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name):
+def draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name, y_limit=0.0):
     fig, ax = plt.subplots()
     for i in range(len(data)):
         ax.plot(x, data[i], label=labels[i])
@@ -57,6 +58,8 @@ def draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name):
     ax.set_axisbelow(True)
     ax.yaxis.grid(True, color='#EEEEEE')
     ax.xaxis.grid(False)
+    if y_limit != 0.0:
+        plt.ylim((0.0, y_limit));
     fig.tight_layout()
     if settings["generatePGF"]:
         plt.savefig(fig_name + ".pgf")
@@ -121,12 +124,17 @@ def draw_latency_fig():
         x = [i+1 for i in range(len(bench_stats[0].stat[i].latency))];
         xlabel = "Operation";
         ylabel = "Latency (us)";
+        max_latency = 0.0;
         for j in range(len(bench_stats)):
+            max_latency = max(max_latency, max(bench_stats[j].stat[i].latency));
             data.append(bench_stats[j].stat[i].latency);
             labels.append(settings["bench"][j]["name"]);
         title = settings["phase"][i - 1]["type"];
         fig_name = "latency-phase-" + str(i);
-        draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name);
+        y_limit = 0.0;
+        if max_latency > 100.0:
+            y_limit = 100.0;
+        draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name, y_limit);
 
 
 def draw_throughput_fig():
@@ -173,10 +181,13 @@ def upload_file(file_name):
 
 # open settings
 settings = {}
-if not os.path.exists("kvbench.json"):
-    print("kvbench.json file not exist!")
+json_file = "kvbench.json"
+if len(sys.argv) >= 2:
+    json_file = sys.argv[1];
+if not os.path.exists(json_file):
+    print(json_file + " file not exist!")
     exit(-1)
-with open("kvbench.json", 'r') as f:
+with open(json_file, 'r') as f:
     settings = json.loads(f.read())
 
 # get environment
@@ -211,10 +222,15 @@ for bench in settings["bench"]:
     if "preTask" in bench:
         res = os.system(bench["preTask"])
 
+    nr_thread = settings["threadNumber"];
+    if "threadNumber" in bench:
+        nr_thread = bench["threadNumber"];
+    bench["threadNumber"] = nr_thread;   # used in latex template
+
     task_arg = "";
     for phase in settings["phase"]:
         task_arg += " " + phase["type"] + " " + str(phase["size"]);
-    task_arg += " -thread " + str(settings["testThread"]);
+    task_arg += " -thread " + str(nr_thread);
     task = bench["task"] + task_arg;
     print("Run task: " + task);
     res = os.system(task)
