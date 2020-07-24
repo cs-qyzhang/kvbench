@@ -20,7 +20,7 @@ class ComboTree<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
     if (AllocatorInit(NODEPATH, NVM_NODE_SIZE, VALUEPATH, NVM_VALUE_SIZE) < 0)
       exit(0);
     db_ = new NVMScaledKV();
-    db_->Initialize(10, sizeof(uint64_t), 256, 1);
+    db_->Initialize(10, sizeof(uint64_t), 256);
   }
 
   ~ComboTree() {

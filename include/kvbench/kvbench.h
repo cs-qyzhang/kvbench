@@ -195,8 +195,8 @@ class Bench {
               << "============================== STATICS "
                  "=============================="
               << std::endl
-              << "DB name:        " << db_->Name() << std::endl
-              << "Total run time: " << stats_.stat(0).duration() << std::endl;
+              << "DB name:            " << db_->Name() << std::endl
+              << "Total run time (s): " << stats_.stat(0).duration() / 1000000.0 << std::endl;
 
     for (size_t i = 0; i < options_->phases_.size(); ++i) {
       auto stat = stats_.stat(i + 1);
@@ -205,15 +205,15 @@ class Bench {
                 << options_->phases_[i].op << "--------------------"
                 << std::endl
                 << "  "
-                << "Run time:        " << stat.duration() << std::endl
+                << "Run time (s):         " << stat.duration() / 1000000.0 << std::endl
                 << "  "
-                << "Total:           " << stat.total() << std::endl
+                << "Total:                " << stat.total() << std::endl
                 << "  "
-                << "Average latency: " << stat.average_latency() << std::endl
+                << "Average latency (us): " << stat.average_latency() << std::endl
                 << "  "
-                << "Maximum latency: " << stat.max_latency() << std::endl
+                << "Maximum latency (us): " << stat.max_latency() << std::endl
                 << "  "
-                << "Throughput:      " << stat.throughput() << std::endl;
+                << "Throughput (ops/s):   " << stat.throughput() << std::endl;
     }
 
     std::cout << "============================ END STATICS "

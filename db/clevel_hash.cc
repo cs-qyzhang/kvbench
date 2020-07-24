@@ -42,7 +42,7 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
       nvobj::transaction::manual tx(pop);
 
       proot->cons = nvobj::make_persistent<persistent_map_type>();
-      proot->cons->set_thread_num(GetThreadNumber());
+      proot->cons->set_thread_num(GetThreadNumber() + 1);
 
       nvobj::transaction::commit();
     }
