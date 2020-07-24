@@ -1,21 +1,17 @@
 #!/usr/bin/python3
 import kvbench_pb2 as kvbench
 from datetime import datetime
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-import cpuinfo
-import distro
-import psutil
 import platform
-import jinja2
 import json
 import os
 import sys
 import tarfile
-import requests
 import subprocess
 import warnings
+import numpy as np
+import matplotlib.pyplot as plt
+import jinja2
+import requests
 warnings.filterwarnings("ignore")
 
 
@@ -44,6 +40,42 @@ def get_duration(num: float):
 
 def get_us(num: float):
     return "{:0.4f}".format(num)
+
+
+# https://stackoverflow.com/a/23378780/7640227
+def get_physical_cores():
+    return os.popen("lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l").read().strip();
+
+
+def get_logical_cores():
+    return os.popen("lscpu -p | egrep -v '^#' | wc -l").read().strip();
+
+
+def get_cpu_cores():
+    physical_cores = int(get_physical_cores());
+    logical_cores = int(get_logical_cores());
+    return '{0}x{1}'.format(int(logical_cores / physical_cores), physical_cores);
+
+
+def get_cpu_model():
+    raw = os.popen("cat /proc/cpuinfo | grep 'model name' | uniq").read().strip();
+    return raw.split(':')[1].strip();
+
+
+# https://stackoverflow.com/a/20348977/7640227
+def get_memory_size():
+    mem_kb = int(os.popen("awk '/MemTotal/ {print $2}' /proc/meminfo").read().strip());
+    return get_size(mem_kb * 1024);
+
+
+def get_disk_size():
+    return os.popen("df -Ph | grep /dev/pmem0 | awk '{print $2}'").read().strip();
+
+
+# https://www.howtoforge.com/how_to_find_out_about_your_linux_distribution
+def get_os_name():
+    raw = os.popen("cat /etc/os-release | grep PRETTY_NAME").read().strip();
+    return raw.split('=')[1][1:-1];
 
 
 def draw_line_chart(x, data, labels, xlabel, ylabel, title, fig_name, y_limit=0.0):
@@ -155,7 +187,7 @@ def draw_throughput_fig():
 
 
 def archieve_file():
-    tar_file = settings["name"] + '-' + settings["user"] + "-" + datetime.now().strftime("%Y-%-m-%-d-%H:%M:%-S") + ".tar.gz";
+    tar_file = settings["name"].replace(' ', '-') + '-' + settings["user"].replace(' ', '-') + "-" + datetime.now().strftime("%Y-%-m-%-d-%H:%M:%-S") + ".tar.gz";
     with tarfile.open(tar_file, "w:gz") as tar:
         for name in ["report.tex", "latency-average.pdf", "latency-max.pdf", "throughput.pdf"]:
             tar.add(name);
@@ -193,13 +225,11 @@ with open(json_file, 'r') as f:
 # get environment
 environ = {}
 environ["machine_type"] = platform.node()
-environ["os_type"] = distro.name() + " " + distro.version()
-cpu_info = cpuinfo.get_cpu_info()
-environ["cpu_model"] = ", ".join(
-    [cpu_info["brand_raw"], cpu_info["arch"], str(cpu_info["count"]) + " Core"])
-mem = psutil.virtual_memory()
-environ["ram_size"] = get_size(mem.total)
+environ["os_name"] = get_os_name()
+environ["cpu_model"] = ", ".join([get_cpu_model(), get_cpu_cores() + " Cores"]);
+environ["ram_size"] = get_memory_size()
 environ["kernel"] = platform.release()
+environ["disk_model"] = get_disk_size() # TODO
 
 bench_stats = []
 tex_stats = []
