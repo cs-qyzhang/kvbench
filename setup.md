@@ -8,7 +8,7 @@
    2. unzip protocxxx
    3. cp bin/protoc /usr/bin
    4. cp -r include/google /usr/include
-   5. wget https://github.com/protocolbuffers/protobuf/releases/download/v3.12.3/protobuf-cpp-3.12.3.tar.gz
+   5. wget https://github.com/protocolbuffers/protobuf/releases/download/v3.12.3/protobuf-cpp-3.12.3.tar.gz # 注意安装最新的 release，要与 pip 安装的protobuf版本一致（是否需要？）
    6. tar xzvf protobuf-cppxxx
    7. cd protobuf-cpp...
    8. ./configure

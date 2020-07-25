@@ -31,23 +31,22 @@ template<>
 class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
  public:
   ClevelHash() {
-    nvobj::pool<root> pop;
     remove(PATH); // delete the mapped file.
 
-    pop = nvobj::pool<root>::create(
-      PATH, LAYOUT, PMEMOBJ_MIN_POOL * 20480, S_IWUSR | S_IRUSR);
-    auto proot = pop.root();
+    pop_ = nvobj::pool<root>::create(
+      PATH, LAYOUT, PMEMOBJ_MIN_POOL * 256, S_IWUSR | S_IRUSR);
+    auto proot = pop_.root();
 
     {
-      nvobj::transaction::manual tx(pop);
+      nvobj::transaction::manual tx(pop_);
 
       proot->cons = nvobj::make_persistent<persistent_map_type>();
-      proot->cons->set_thread_num(GetThreadNumber() + 1);
+      proot->cons->set_thread_num(2);
 
       nvobj::transaction::commit();
     }
 
-    db_ = pop.root()->cons;
+    db_ = proot->cons;
   }
 
   ~ClevelHash() {}
@@ -75,12 +74,29 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
     return 0;
   }
 
+  int GetThreadNumber() const {
+    if (get_phase_count_)
+      return get_phase_count_ * 2;
+    else
+      return 1;
+  }
+
+  void PhaseEnd(kvbench::Operation op, size_t size) {
+    get_phase_count_++;
+
+    nvobj::transaction::manual tx(pop_);
+		db_->set_thread_num(get_phase_count_ * 2 + 1);
+		nvobj::transaction::commit();
+  }
+
   std::string Name() const {
     return "Clevel Hashing";
   }
 
  private:
   pmem::obj::persistent_ptr<persistent_map_type> db_;
+  nvobj::pool<root> pop_;
+  int get_phase_count_ = 0;
 };
 
 int main(int argc, char** argv) {

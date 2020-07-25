@@ -156,13 +156,17 @@ class DB {
 
   virtual std::string Name() const = 0;
 
-  int GetThreadNumber() const { return nr_thread_; };
+  virtual int GetThreadNumber() const { return nr_thread_; };
 
-  void SetThreadNumber(int nr_thread) { nr_thread_ = nr_thread; }
+  virtual void SetThreadNumber(int nr_thread) { nr_thread_ = nr_thread; }
 
-  int GetThreadId() const { return thread_id_; }
+  virtual void PhaseBegin(Operation op, size_t size) {}
 
-  void SetThreadId(int thread_id) { thread_id_ = thread_id; }
+  virtual void PhaseEnd(Operation op, size_t size) {}
+
+  virtual int GetThreadId() const { return thread_id_; }
+
+  virtual void SetThreadId(int thread_id) { thread_id_ = thread_id; }
 
  private:
   int nr_thread_;
@@ -308,7 +312,11 @@ class Bench {
   void Run_() {
     Stat* stat = stats_.add_stat();
     double run_time = 0.0;
-    for (auto& phase : options_->phases_) run_time += RunPhase_(phase);
+    for (auto& phase : options_->phases_) {
+      db_->PhaseBegin(phase.op, phase.size);
+      run_time += RunPhase_(phase);
+      db_->PhaseEnd(phase.op, phase.size);
+    }
     stat->set_duration(run_time);
     CaculateStatistic_();
     PrintStats();
@@ -394,23 +402,24 @@ class Bench {
     Timer timer;
     int sample_interval = phase.size < 2000000 ? 1 : phase.size / 2000000;
 
+    int nr_thread = db_->GetThreadNumber();
     google::protobuf::RepeatedField<double>* latencys =
-        new google::protobuf::RepeatedField<double>[nr_thread_];
+        new google::protobuf::RepeatedField<double>[nr_thread];
     std::vector<double> total_latency;
     std::vector<double> max_latency;
-    total_latency.resize(nr_thread_);
-    max_latency.resize(nr_thread_);
+    total_latency.resize(nr_thread);
+    max_latency.resize(nr_thread);
 
     timer.Start();
 
     std::vector<std::thread> test_threads;
-    for (int thread_id = 0; thread_id < nr_thread_; ++thread_id) {
+    for (int thread_id = 0; thread_id < nr_thread; ++thread_id) {
       size_t test_size;
-      if (thread_id != nr_thread_ - 1)
-        test_size = phase.size / nr_thread_;
+      if (thread_id != nr_thread - 1)
+        test_size = phase.size / nr_thread;
       else
-        test_size = phase.size - (phase.size / nr_thread_) *
-                                     (nr_thread_ - 1);
+        test_size = phase.size - (phase.size / nr_thread) *
+                                     (nr_thread - 1);
       test_threads.emplace_back(&Bench::RunPhaseMain_, this,
                                 thread_id, std::ref(phase), test_size,
                                 std::ref(total_latency[thread_id]),
@@ -425,7 +434,7 @@ class Bench {
     stat->set_duration(run_time);
 
     auto stat_latency = stat->mutable_latency();
-    for (int i = 0; i < nr_thread_; ++i)
+    for (int i = 0; i < nr_thread; ++i)
       stat_latency->MergeFrom(latencys[i]);
 
     total_latency_.push_back(
