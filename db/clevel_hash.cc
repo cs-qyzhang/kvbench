@@ -70,22 +70,22 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
     return 0;
   }
 
-  int Scan(uint64_t min_key, uint64_t max_key, std::vector<uint64_t>* values) {
+  int Scan(uint64_t min_key, std::vector<uint64_t>* values) {
     return 0;
   }
 
   int GetThreadNumber() const {
-    if (get_phase_count_)
-      return get_phase_count_ * 2;
-    else
-      return 1;
+    return nr_thread_;
   }
 
   void PhaseEnd(kvbench::Operation op, size_t size) {
-    get_phase_count_++;
+    if (op == kvbench::Operation::LOAD)
+      nr_thread_ = 1;
+    else
+      nr_thread_ *= 2;
 
     nvobj::transaction::manual tx(pop_);
-		db_->set_thread_num(get_phase_count_ * 2 + 1);
+		db_->set_thread_num(GetThreadNumber() + 1);
 		nvobj::transaction::commit();
   }
 
@@ -96,7 +96,7 @@ class ClevelHash<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
  private:
   pmem::obj::persistent_ptr<persistent_map_type> db_;
   nvobj::pool<root> pop_;
-  int get_phase_count_ = 0;
+  int nr_thread_ = 1;
 };
 
 int main(int argc, char** argv) {

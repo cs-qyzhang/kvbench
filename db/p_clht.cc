@@ -33,7 +33,7 @@ class CLHT<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
     return 0;
   }
 
-  int Scan(uint64_t min_key, uint64_t max_key, std::vector<uint64_t>* values) {
+  int Scan(uint64_t min_key, std::vector<uint64_t>* values) {
     return 0;
   }
 
@@ -41,8 +41,20 @@ class CLHT<uint64_t, uint64_t> : public kvbench::DB<uint64_t, uint64_t> {
     return "Level Hashing";
   }
 
+  int GetThreadNumber() const {
+    return nr_thread_;
+  }
+
+  void PhaseEnd(kvbench::Operation op, size_t size) {
+    if (op == kvbench::Operation::LOAD)
+      nr_thread_ = 1;
+    else
+      nr_thread_ *= 2;
+  }
+
  private:
   clht_t* db_;
+  int nr_thread_;
 };
 
 int main(int argc, char** argv) {

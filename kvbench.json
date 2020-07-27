@@ -7,6 +7,16 @@
   "showFigure": false,
   "generatePGF": false,
   "uploadURL": "http://jianyue.tech/upload/upload.php",
+  "mail": {
+    "enable": false,
+    "sender": "noreply@mail.jianyue.tech",
+    "password": "",
+    "senderNickName": "jianyue.tech",
+    "replyTo": "",
+    "receivers": [
+      "cs.qyzhang@qq.com"
+    ]
+  },
   "threadNumber": 1,
   "phase": [
     {

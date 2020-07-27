@@ -152,7 +152,7 @@ class DB {
 
   virtual int Delete(Key key) = 0;
 
-  virtual int Scan(Key min_key, Key max_key, std::vector<Value>* values) = 0;
+  virtual int Scan(Key min_key, std::vector<Value>* values) = 0;
 
   virtual std::string Name() const = 0;
 
@@ -382,10 +382,9 @@ class Bench {
     } else if (phase.op == Operation::SCAN) {
       for (size_t i = 0; i < test_size; ++i) {
         Key min_key = phase.random_key->Next();
-        Key max_key = phase.random_key->Next();  // TODO
         std::vector<Value> values;
         KVBENCH_RECORD_START;
-        db_->Scan(min_key, max_key, &values);  // TODO
+        db_->Scan(min_key, &values);  // TODO
         KVBENCH_RECORD_END;
       }
     } else {

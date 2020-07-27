@@ -30,7 +30,7 @@ class Map : public kvbench::DB<Key, Value> {
     return 0;
   }
 
-  int Scan(Key min_key, Key max_key, std::vector<Value>* values) {
+  int Scan(Key min_key, std::vector<Value>* values) {
     return 0;
   }
 
